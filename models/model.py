@@ -1,12 +1,53 @@
 # -*- coding: utf-8 -*-
 
-from odoo import models, fields
+from odoo import models, fields, api
+
+
+# class ResPartner(models.Model):
+#     _inherit = 'res.partner'
+
+#     check_delivery_flag = fields.Boolean(string='Check Delivery Method Flag', compute="_compute_check_delivery_flag", store=True)
+
+#     @api.depends('country_id', 'state_id', 'xcity', 'property_delivery_carrier_id')
+#     def _compute_check_delivery_flag(self):
+#         quotation_obj = self.env['sale.order'].sudo()
+#         for partner in self:
+#             partner.check_delivery_flag = False
+#             if type(partner.id) is int:
+#                 partner_ids = [partner.id]
+#                 if partner.parent_id:
+#                     partner_ids.append(partner.parent_id.id)
+#                 quotations = quotation_obj.search([('carrier_id', '!=', False), ('partner_id', 'in', partner_ids), ('state', '=', 'draft'), ('website_id', '!=', False)])
+#                 if quotations:
+#                     quotations._remove_delivery_line()
+#                     quotations.write({'carrier_id': False})
+#                     quotations._compute_available_carrier()
+#                     for quote in quotations:
+#                         quote._check_carrier_quotation()
+#                 quotations = quotation_obj.search([('carrier_id', '!=', False), ('partner_shipping_id', 'in', partner_ids), ('state', '=', 'draft'), ('website_id', '!=', False)])
+#                 if quotations:
+#                     quotations._remove_delivery_line()
+#                     quotations.write({'carrier_id': False})
+#                     quotations._compute_available_carrier()
+#                     for quote in quotations:
+#                         quote._check_carrier_quotation()
 
 
 class DeliveryCarrier(models.Model):
     _inherit = 'delivery.carrier'
 
     municipality_ids = fields.Many2many('res.country.state.city', string='Municipalities')
+
+    def available_carriers(self, partner):
+        flag_municipality = False
+        for delivery in self:
+            if delivery.municipality_ids and partner.xcity and partner.xcity.id in delivery.municipality_ids.ids:
+                flag_municipality = delivery
+                break
+        if flag_municipality:
+            return flag_municipality
+        else:
+            return self.filtered(lambda c: c._match_address(partner))
 
 
 class SaleOrder(models.Model):
