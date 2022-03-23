@@ -28,14 +28,15 @@ class SaleOrder(models.Model):
     @api.depends('partner_shipping_id.country_id', 'partner_shipping_id.state_id', 'partner_shipping_id.xcity', 'partner_shipping_id.property_delivery_carrier_id', 'partner_id.country_id', 'partner_id.state_id', 'partner_id.xcity', 'partner_id.property_delivery_carrier_id')
     def _compute_check_delivery_flag(self):
         for order in self:
-            order.check_delivery_flag = False
-            if order.state == 'draft' and order.website_id != False:
-                if order.order_line.filtered(lambda r: r.is_delivery):
-                    order._remove_delivery_line()
-                if order.carrier_id:
-                    order.write({'carrier_id': False})
-                order._compute_available_carrier()
-                order._check_carrier_quotation()
+            if type(order.id) is int:
+                order.check_delivery_flag = False
+                if order.state == 'draft' and order.website_id != False:
+                    if order.order_line.filtered(lambda r: r.is_delivery):
+                        order._remove_delivery_line()
+                    if order.carrier_id:
+                        order.write({'carrier_id': False})
+                    order._compute_available_carrier()
+                    order._check_carrier_quotation()
 
     def _check_carrier_quotation(self, force_carrier_id=None):
         self.ensure_one()
